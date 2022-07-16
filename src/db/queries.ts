@@ -19,12 +19,15 @@ const getUsers = (request: any, response: any) => {
 }
 //get one user by id
 const getUserById = (request: any, response: any) => {
-    const id = parseInt(request.params.id)
+    console.log(request.params.id);
+    console.log(request.get('x-authentication'));
+
+    // const id = parseInt(request.params.id)
     const token = request.get('x-authentication');
     if (!token) {//if no token is presented
         return response.status(403).json({ error: 'No credentials sent!' });
     } else {
-        pool.query('SELECT * FROM users WHERE id = $1', [id], (error: any, results: any) => {
+        pool.query('SELECT * FROM users WHERE id = $1', [token], (error: any, results: any) => {
             if (error) {
                 throw error
             }
@@ -38,7 +41,7 @@ const getUserById = (request: any, response: any) => {
 }
 
 //get one user by name
-const getUserByName = (name: string,response:any) => {
+const getUserByName = (name: string, response: any) => {
     console.log('test');
     pool.query('SELECT * FROM users WHERE username = $1', [name], (error: any, results: any) => {
         if (error) {
@@ -63,8 +66,8 @@ const createUser = (request: any, response: any) => {
         if (error) {
             console.log(error.constraint);
             if (error.constraint == "uniquename") {//user already exits
-               getUserByName(username, response)
-            }else{
+                getUserByName(username, response)
+            } else {
                 response.status(500).send({ 'token': `${error}` })
             }
         } else {
