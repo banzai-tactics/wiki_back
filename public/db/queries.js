@@ -19,9 +19,6 @@ const getUsers = (request, response) => {
 };
 //get one user by id
 const getUserById = (request, response) => {
-    console.log(request.params.id);
-    console.log(request.get('x-authentication'));
-    // const id = parseInt(request.params.id)
     const token = request.get('x-authentication');
     if (!token) { //if no token is presented
         return response.status(403).json({ error: 'No credentials sent!' });
@@ -75,19 +72,26 @@ const createUser = (request, response) => {
             const token = results.rows[0].id;
             response.cookie('X-Authorization', token, options);
             // response.redirect('/')
-            response.status(201).send({ 'token': `${results.rows[0].id}` });
+            if (lang != results.rows[0].lang) { //lang different then db -> update
+            }
+            else {
+                response.status(201).send({ 'token': `${results.rows[0].id}`, 'lang': lang });
+            }
         }
     });
 };
 //update user info
 const updateUser = (request, response) => {
     const id = parseInt(request.params.id);
-    const { username, lang } = request.body;
-    pool.query('UPDATE users SET username = $1, lang = $2 WHERE id = $3', [username, lang, id], (error, results) => {
+    const body = request.body;
+    console.log(body.id);
+    console.log(body.lang);
+    pool.query('UPDATE users SET lang = $1 WHERE id = $2', [body.lang, body.id], (error, results) => {
         if (error) {
             throw error;
         }
-        response.status(200).send(`User modified with ID: ${id}`);
+        console.log(results);
+        response.status(200).send({ 'token': body.id, 'lang': body.lang });
     });
 };
 //delete user

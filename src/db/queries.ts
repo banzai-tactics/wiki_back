@@ -19,10 +19,6 @@ const getUsers = (request: any, response: any) => {
 }
 //get one user by id
 const getUserById = (request: any, response: any) => {
-    console.log(request.params.id);
-    console.log(request.get('x-authentication'));
-
-    // const id = parseInt(request.params.id)
     const token = request.get('x-authentication');
     if (!token) {//if no token is presented
         return response.status(403).json({ error: 'No credentials sent!' });
@@ -57,7 +53,7 @@ const getUserByName = (name: string, response: any) => {
 const createUser = (request: any, response: any) => {
     const { username, lang } = request.body;
     let options = {
-        path: "/",
+        path: "/",//TODO: need to check what this means
         sameSite: true,
         maxAge: 1000 * 60 * 60 * 24, // would expire after 24 hours
         httpOnly: true, // The cookie only accessible by the web server
@@ -74,7 +70,11 @@ const createUser = (request: any, response: any) => {
             const token = results.rows[0].id
             response.cookie('X-Authorization', token, options)
             // response.redirect('/')
-            response.status(201).send({ 'token': `${results.rows[0].id}` })
+            if(lang !=results.rows[0].lang ){ //lang different then db -> update
+
+            }else{
+                response.status(201).send({ 'token': `${results.rows[0].id}`, 'lang': lang });
+            }
         }
     })
 }
@@ -82,16 +82,19 @@ const createUser = (request: any, response: any) => {
 //update user info
 const updateUser = (request: any, response: any) => {
     const id = parseInt(request.params.id)
-    const { username, lang } = request.body
+    const body = request.body
+    console.log(body.id);
+    console.log(body.lang);
 
     pool.query(
-        'UPDATE users SET username = $1, lang = $2 WHERE id = $3',
-        [username, lang, id],
+        'UPDATE users SET lang = $1 WHERE id = $2',
+        [body.lang, body.id],
         (error: any, results: any) => {
             if (error) {
                 throw error
             }
-            response.status(200).send(`User modified with ID: ${id}`)
+            console.log(results);
+            response.status(200).send({'token': body.id, 'lang' : body.lang});
         }
     )
 }
