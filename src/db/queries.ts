@@ -10,7 +10,7 @@ const pool = new Pool({
 
 //get all users
 const getUsers = (request: any, response: any) => {
-    pool.query('SELECT * FROM users ORDER BY id ASC', (error: any, results: any) => {
+    pool.query('SELECT * FROM users ORDER BY id ASC', (error: Error, results: any) => {
         if (error) {
             throw error
         }
@@ -23,7 +23,7 @@ const getUserById = (request: any, response: any) => {
     if (!token) {//if no token is presented
         return response.status(403).json({ error: 'No credentials sent!' });
     } else {
-        pool.query('SELECT * FROM users WHERE id = $1', [token], (error: any, results: any) => {
+        pool.query('SELECT * FROM users WHERE id = $1', [token], (error: Error, results: any) => {
             if (error) {
                 throw error
             }
@@ -39,7 +39,7 @@ const getUserById = (request: any, response: any) => {
 //get one user by name
 const getUserByName = (name: string, response: any) => {
     console.log('test');
-    pool.query('SELECT * FROM users WHERE username = $1', [name], (error: any, results: any) => {
+    pool.query('SELECT * FROM users WHERE username = $1', [name], (error: Error, results: any) => {
         if (error) {
             throw error
         }

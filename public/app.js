@@ -32,48 +32,13 @@ app.get('/', (request, response) => {
     response.json({ info: 'Node.js, Express, and Postgres API' });
 });
 //db endpoints
-app.get('/users', db.getUsers);
-app.get('/users/:id', db.getUserById);
-app.post('/user', db.createUser);
-app.put('/users/:id', db.updateUser);
-app.delete('/users/:id', db.deleteUser);
-//get wiki info
-app.get('/introduction/:articleId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var articleId = req.params["articleId"];
-    const token = req.get('x-authentication');
-    var lang = req.get('Accept-Language').substring(0, 2); // get from header
-    if (token != undefined) {
-        console.log(token);
-        var url = `http://localhost:3000/users/${token}`;
-        request({ url, headers: { "x-authentication": token } }, function (err, response, body) {
-            return __awaiter(this, void 0, void 0, function* () {
-                if (err) {
-                    var error = "cannot connect to the server";
-                }
-                else {
-                    lang = JSON.parse(body)[0].lang; // change if user chose lang.
-                }
-                if ((0, wiki_1.checkName)(articleId)) {
-                    var wikiArticle = yield (0, wiki_1.getWiki)(articleId, lang);
-                    res.send(wikiArticle);
-                }
-                else {
-                    var errs = encodeURIComponent('name_containes_illegal_chars');
-                    res.redirect('../public/views/404.html/?err=' + errs);
-                }
-            });
-        });
-    }
-    else {
-        var errs = encodeURIComponent('no_token_was_given');
-        res.redirect('../public/views/404.html/?err=' + errs);
-    }
-}));
+app.get('/users', db.getUsers); // get all users
+app.get('/users/:id', db.getUserById); //get user
+app.post('/user', db.createUser); //create new user
+app.put('/users/:id', db.updateUser); // update user lang
+app.delete('/users/:id', db.deleteUser); // delete user
+app.get('/introduction/:articleId', (req, res) => __awaiter(void 0, void 0, void 0, function* () { (0, wiki_1.getWikiParagraph)(req, res); })); //wiki data
+app.use((req, res) => { res.sendFile('./views/404.html', { root: __dirname }); }); //404 page
 app.listen(port, () => {
-    console.log(uuid);
     return console.log(`Express is listening at http://localhost:${port}`);
-});
-//404 page
-app.use((req, res) => {
-    res.sendFile('./views/404.html', { root: __dirname });
 });
