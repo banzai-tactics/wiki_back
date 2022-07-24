@@ -1,3 +1,5 @@
+import { User } from "../services/User";
+
 //TODO: need to add restrictive permissions
 const Pool = require('pg').Pool
 const pool = new Pool({
@@ -9,104 +11,89 @@ const pool = new Pool({
 });
 
 //get all users
-const getUsers = (request: any, response: any) => {
-    pool.query('SELECT * FROM users ORDER BY id ASC', (error: Error, results: any) => {
+const getUsers = () => {
+    pool.query('SELECT * FROM users ORDER BY id ASC', (error: unknown, results: unknown) => {
         if (error) {
-            throw error
+            throw error;
+        } else {
+            return results;
         }
-        response.status(200).json(results.rows)
     })
 }
 //get one user by id
-const getUserById = (request: any, response: any) => {
-    const token = request.get('x-authentication');
-    if (!token) {//if no token is presented
-        return response.status(403).json({ error: 'No credentials sent!' });
-    } else {
-        pool.query('SELECT * FROM users WHERE id = $1', [token], (error: Error, results: any) => {
-            if (error) {
-                throw error
+const getUserById = async (token: string) => {
+    try {
+
+
+        if (!token) {//if no token is presented
+            throw new Error('Token provided is not valid');
+        } else {
+            const user = await pool.query('SELECT * FROM users WHERE id = $1', [token]);
+            if (user != undefined) {//TODO: think of better if
+            console.log(user.rows);
+                return new User(user.rows[0].username, user.rows[0].lang, user.rows[0].id)
             }
-            if (token != results.rows[0].id) {//if wrong token is presented
-                return response.status(403).json({ error: 'wrong token!' });
-            } else {//successful
-                return response.status(200).json(results.rows);
+            else {
+                // if (token != user.rows[0].id) {//if wrong token is presented
+                //     throw new Error('token provided is not valid');
+                //     // return response.status(403).json({ error: 'wrong token!' });
+                // } else {//successful
+
+                // }
             }
-        })
+        }
+    } catch (error) {
+        throw error;
     }
 }
 
 //get one user by name
-const getUserByName = (name: string, response: any) => {
-    console.log('test');
-    pool.query('SELECT * FROM users WHERE username = $1', [name], (error: Error, results: any) => {
-        if (error) {
-            throw error
-        }
-        else {//successful
-            response.status(201).send({ 'token': `${results.rows[0].id}` })
-        }
-    })
+const getUserByName = async (name: string) => {
+    const user = await pool.query('SELECT * FROM users WHERE username = $1', [name]);
+    return new User(user.rows[0].username, user.rows[0].lang, user.rows[0].id);
+
 }
 
 //add new user or if exists "login"
-const createUser = (request: any, response: any) => {
-    const { username, lang } = request.body;
-    let options = {
-        path: "/",//TODO: need to check what this means
-        sameSite: true,
-        maxAge: 1000 * 60 * 60 * 24, // would expire after 24 hours
-        httpOnly: true, // The cookie only accessible by the web server
-    }
-    pool.query('INSERT INTO users (username, lang) VALUES ($1, $2) RETURNING *', [username, lang], (error: any, results: any) => {
-        if (error) {
-            console.log(error.constraint);
-            if (error.constraint == "uniquename") {//user already exits
-                getUserByName(username, response)
-            } else {
-                response.status(500).send({ 'token': `${error}` })
-            }
+const createUser = async (username: string, lang: string) => {
+    try {
+        const user: User = await getUserByName(username);
+        if (user != undefined) {
+            return user;
         } else {
-            const token = results.rows[0].id
-            response.cookie('X-Authorization', token, options)
-            // response.redirect('/')
-            if(lang !=results.rows[0].lang ){ //lang different then db -> update
-
-            }else{
-                response.status(201).send({ 'token': `${results.rows[0].id}`, 'lang': lang });
-            }
+            const newUser = await pool.query('INSERT INTO users (username, lang) VALUES ($1, $2) RETURNING *', [username, lang]);
+            return new User(newUser.rows[0].username, newUser.rows[0].lang, newUser.rows[0].id)
         }
-    })
+    } catch (error) {
+        throw error
+    }
 }
 
 //update user info
-const updateUser = (request: any, response: any) => {
-    const id = parseInt(request.params.id)
-    const body = request.body
-    console.log(body.id);
-    console.log(body.lang);
-
+const updateUser = (token: string, lang: string) => {
     pool.query(
         'UPDATE users SET lang = $1 WHERE id = $2',
-        [body.lang, body.id],
-        (error: any, results: any) => {
+        [token, lang],
+        (error: Error, results: any) => {
             if (error) {
                 throw error
+            } else {
+                // console.log(results); //TODO: delete after complete
+                return ({ 'token': token, 'lang': lang });
             }
-            console.log(results);
-            response.status(200).send({'token': body.id, 'lang' : body.lang});
         }
     )
 }
 
 //delete user
-const deleteUser = (request: any, response: any) => {
-    const id = parseInt(request.params.id)
-    pool.query('DELETE FROM users WHERE id = $1', [id], (error: any, results: any) => {
+const deleteUser = (token: string) => {
+    pool.query('DELETE FROM users WHERE id = $1', [token], (error: any, results: any) => {
         if (error) {
             throw error
+        } else {
+            console.log(results);
+            return (`User deleted with ID: ${token}`)
         }
-        response.status(200).send(`User deleted with ID: ${id}`)
     })
 }
 
@@ -118,3 +105,12 @@ module.exports = {
     updateUser,
     deleteUser,
 }
+
+
+// BL VS CONTROLLER - need to seprate the two. all error handle in next()
+//config file by enviorment variables. conifg.ts - > file.env (gen variables & secrets) not in commit.
+// https://www.npmjs.com/package/dotenv
+// use const or let not var. immutable concept.
+//unknow is better then any => typeof === blah
+//use next(e)
+//add try catch in async
