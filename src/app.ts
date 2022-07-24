@@ -9,6 +9,7 @@ import { next } from 'cheerio/lib/api/traversing';
 const app = express();
 const port = 3000;
 
+
 app.use(cors());
 app.use(cookieParser());
 app.use(bodyParser.json());
@@ -45,7 +46,6 @@ app.post('/user', async (req, res, next) => {
         const body = req.body;
         const username = body.username;
         const lang = body.lang;
-        console.log(body.username);
         let options = {
             path: "/",//TODO: need to check what this means
             sameSite: true,
@@ -53,7 +53,7 @@ app.post('/user', async (req, res, next) => {
             httpOnly: true, // The cookie only accessible by the web server
         }
         const user = await db.createUser(username, lang);
-        console.log(user.token);
+        console.log(user);
         res.cookie('X-Authorization', user.token, options)
         res.status(200).send(user);
     } catch (error) {
@@ -107,9 +107,9 @@ app.listen(port, () => {
 });
 
 // BL VS CONTROLLER - need to seprate the two. all error handle in next()
-//config file by enviorment variables. conifg.ts - > file.env (gen variables & secrets) not in commit.
-// https://www.npmjs.com/package/dotenv
-// use const or let not var. immutable concept.
-//unknow is better then any => typeof === blah
-//use next(e)
-//add try catch in async
+//TODO: config file by enviorment variables. conifg.ts - > file.env (gen variables & secrets) not in commit.
+//TODO: https://www.npmjs.com/package/dotenv
+//TODO: use const or let not var. immutable concept.
+//TODO: unknow is better then any => typeof === blah
+//TODO: use next(e)
+//TODO: add try catch in async

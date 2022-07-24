@@ -8,16 +8,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const User_1 = require("../services/User");
-//TODO: need to add restrictive permissions
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const Pool = require('pg').Pool;
 const pool = new Pool({
-    user: 'me',
-    host: 'localhost',
-    database: 'api',
-    password: 'shefi',
-    port: 5432,
+    user: process.env.USER,
+    host: process.env.HOST,
+    database: process.env.DATABASE,
+    password: process.env.PASSWORD,
+    port: process.env.PORT,
 });
 //get all users
 const getUsers = () => {
@@ -64,8 +68,12 @@ const getUserByName = (name) => __awaiter(void 0, void 0, void 0, function* () {
 const createUser = (username, lang) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = yield getUserByName(username);
+        console.log("testtttttttttt");
         if (user != undefined) {
-            return user;
+            if (lang != user.lang) {
+                yield updateUser(user.token, lang);
+            }
+            return new User_1.User(user.username, lang, user.token);
         }
         else {
             const newUser = yield pool.query('INSERT INTO users (username, lang) VALUES ($1, $2) RETURNING *', [username, lang]);
@@ -77,17 +85,10 @@ const createUser = (username, lang) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 //update user info
-const updateUser = (token, lang) => {
-    pool.query('UPDATE users SET lang = $1 WHERE id = $2', [token, lang], (error, results) => {
-        if (error) {
-            throw error;
-        }
-        else {
-            // console.log(results); //TODO: delete after complete
-            return ({ 'token': token, 'lang': lang });
-        }
-    });
-};
+const updateUser = (token, lang) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield pool.query('UPDATE users SET lang = $1 WHERE id = $2', [lang, token]);
+    console.log(user.rows);
+});
 //delete user
 const deleteUser = (token) => {
     pool.query('DELETE FROM users WHERE id = $1', [token], (error, results) => {

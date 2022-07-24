@@ -1,13 +1,14 @@
 import { User } from "../services/User";
+import dotenv from 'dotenv'
+dotenv.config();
 
-//TODO: need to add restrictive permissions
 const Pool = require('pg').Pool
 const pool = new Pool({
-    user: 'me',
-    host: 'localhost',
-    database: 'api',
-    password: 'shefi',
-    port: 5432,
+    user: process.env.USER,
+    host: process.env.HOST,
+    database: process.env.DATABASE,
+    password: process.env.PASSWORD,
+    port: process.env.PORT,
 });
 
 //get all users
@@ -30,7 +31,7 @@ const getUserById = async (token: string) => {
         } else {
             const user = await pool.query('SELECT * FROM users WHERE id = $1', [token]);
             if (user != undefined) {//TODO: think of better if
-            console.log(user.rows);
+                console.log(user.rows);
                 return new User(user.rows[0].username, user.rows[0].lang, user.rows[0].id)
             }
             else {
@@ -58,8 +59,12 @@ const getUserByName = async (name: string) => {
 const createUser = async (username: string, lang: string) => {
     try {
         const user: User = await getUserByName(username);
+        console.log("testtttttttttt");
         if (user != undefined) {
-            return user;
+            if (lang != user.lang) {
+                await updateUser(user.token, lang)
+            }
+            return new User(user.username, lang, user.token);
         } else {
             const newUser = await pool.query('INSERT INTO users (username, lang) VALUES ($1, $2) RETURNING *', [username, lang]);
             return new User(newUser.rows[0].username, newUser.rows[0].lang, newUser.rows[0].id)
@@ -70,19 +75,9 @@ const createUser = async (username: string, lang: string) => {
 }
 
 //update user info
-const updateUser = (token: string, lang: string) => {
-    pool.query(
-        'UPDATE users SET lang = $1 WHERE id = $2',
-        [token, lang],
-        (error: Error, results: any) => {
-            if (error) {
-                throw error
-            } else {
-                // console.log(results); //TODO: delete after complete
-                return ({ 'token': token, 'lang': lang });
-            }
-        }
-    )
+const updateUser = async (token: string, lang: string) => {
+    const user = await pool.query('UPDATE users SET lang = $1 WHERE id = $2', [lang, token]);
+    console.log(user.rows);
 }
 
 //delete user
