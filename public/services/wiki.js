@@ -10,12 +10,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getWikiParagraph = void 0;
+const WikiObject_1 = require("./WikiObject");
 /*
 page to handle all wiki logic.
 */
 var request = require("request");
 const cheerio = require('cheerio');
-function checkName(name) {
+const db = require('../db/queries');
+function isValidName(name) {
     const patt = /^(\w|\.|-)+$/;
     return patt.test(name);
 }
@@ -30,55 +32,41 @@ function getWikiHtml(html) {
     });
     return text;
 }
-function getWikiObject(articleId, lang) {
-    return new Promise((resolve, reject) => {
-        var url = `https://${lang}.wikipedia.org/wiki/${articleId}`;
-        request(url, function (err, response, body) {
-            if (err) {
-                var error = "cannot connect to the server";
-                reject("<p>Error</p>");
-            }
-            else {
-                const strippedParagraph = getWikiHtml(body);
-                var articleObj = {
-                    'scrapeDate': Date.now(),
-                    'articleName': articleId,
-                    'introduction': strippedParagraph
-                };
-                resolve(articleObj);
-            }
-        });
+function test() {
+    return __awaiter(this, void 0, void 0, function* () {
     });
 }
-function getWikiParagraph(req, res) {
+function getWikiObject(articleId, lang) {
     return __awaiter(this, void 0, void 0, function* () {
-        var articleId = req.params["articleId"];
-        const token = req.get('x-authentication');
-        var lang = req.get('Accept-Language').substring(0, 2); // get from header
-        if (token != undefined) {
-            var url = `http://localhost:3000/users/${token}`;
-            request({ url, headers: { "x-authentication": token } }, function (err, response, body) {
-                return __awaiter(this, void 0, void 0, function* () {
-                    if (err) {
-                        var error = "cannot connect to the server";
-                    }
-                    else {
-                        lang = JSON.parse(body)[0].lang; // change if user chose lang.
-                        if (checkName(articleId)) {
-                            var wikiArticle = yield getWikiObject(articleId, lang);
-                            res.send(wikiArticle);
-                        }
-                        else {
-                            var errs = encodeURIComponent('name_containes_illegal_chars');
-                            res.redirect('../public/views/404.html/?err=' + errs);
-                        }
-                    }
-                });
-            });
+        var url = `https://${lang}.wikipedia.org/wiki/${articleId}`;
+        const data = yield fetch(url).then(response => {
+            return response.text();
+        }).then(data => {
+            const strippedParagraph = getWikiHtml(data);
+            const articleObj = new WikiObject_1.WikiObject(Date.now(), articleId, strippedParagraph);
+            return articleObj;
+        });
+        return data;
+    });
+}
+function getWikiParagraph(articleId, token) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            if (token != undefined) {
+                const user = yield db.getUserById(token); //TODO: add User type
+                const lang = user.lang;
+                if (isValidName(articleId)) {
+                    const wikiArticle = yield getWikiObject(articleId, lang);
+                    return (wikiArticle);
+                }
+                else {
+                    var errs = encodeURIComponent('name_containes_illegal_chars');
+                    throw errs;
+                }
+            }
         }
-        else {
-            var errs = encodeURIComponent('no_token_was_given');
-            res.redirect('../public/views/404.html/?err=' + errs);
+        catch (error) {
+            throw error;
         }
     });
 }

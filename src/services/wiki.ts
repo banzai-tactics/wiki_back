@@ -1,10 +1,13 @@
+import { WikiObject } from "./WikiObject";
+
 /*
 page to handle all wiki logic.
 */
 var request: any = require("request");
 const cheerio = require('cheerio');
+const db = require('../db/queries');
 
-function checkName(name: string) {
+function isValidName(name: string) {
 	const patt: any = /^(\w|\.|-)+$/;
 	return patt.test(name);
 }
@@ -20,50 +23,38 @@ function getWikiHtml(html: string) {
 	})
 	return text;
 }
+async function test() {
 
-function getWikiObject(articleId: string, lang: string): Promise<any> {
-	return new Promise((resolve, reject) => {
-		var url: string = `https://${lang}.wikipedia.org/wiki/${articleId}`;
-		request(url, function (err: any, response: any, body: any) {
-			if (err) {
-				var error = "cannot connect to the server";
-				reject("<p>Error</p>");
-			} else {
-				const strippedParagraph = getWikiHtml(body);
-				var articleObj = {
-					'scrapeDate': Date.now(),
-					'articleName': articleId,
-					'introduction': strippedParagraph
-				}
-				resolve(articleObj);
-			}
-		});
-	})
+}
+
+async function getWikiObject(articleId: string, lang: string): Promise<any> {
+	var url: string = `https://${lang}.wikipedia.org/wiki/${articleId}`;
+	const data = await fetch(url).then(response => {
+		return response.text();
+	}).then(data => {
+		const strippedParagraph = getWikiHtml(data);
+		const articleObj = new WikiObject(Date.now(), articleId, strippedParagraph);
+		return articleObj;
+	});
+	return data;
 }
 
 
-export async function getWikiParagraph(req: any, res: any) {
-	var articleId: string = req.params["articleId"];
-	const token = req.get('x-authentication');
-	var lang = req.get('Accept-Language').substring(0, 2) // get from header
-	if (token != undefined) {
-		var url: string = `http://localhost:3000/users/${token}`;
-		request({ url, headers: { "x-authentication": token } }, async function (err: any, response: any, body: any) {
-			if (err) {
-				var error = "cannot connect to the server";
+export async function getWikiParagraph(articleId: string, token: string) {
+	try {
+		if (token != undefined) {
+			const user = await db.getUserById(token); //TODO: add User type
+			const lang = user.lang;
+			if (isValidName(articleId)) {
+				const wikiArticle = await getWikiObject(articleId, lang);
+				return (wikiArticle);
 			} else {
-				lang = JSON.parse(body)[0].lang; // change if user chose lang.
-				if (checkName(articleId)) {
-					var wikiArticle = await getWikiObject(articleId, lang);
-					res.send(wikiArticle);
-				} else {
-					var errs = encodeURIComponent('name_containes_illegal_chars');
-					res.redirect('../public/views/404.html/?err=' + errs);
-				}
+				var errs = encodeURIComponent('name_containes_illegal_chars');
+				throw errs;
 			}
-		});
-	} else {
-		var errs = encodeURIComponent('no_token_was_given');
-		res.redirect('../public/views/404.html/?err=' + errs);
+		}
+	} catch (error) {
+		throw error;
 	}
+
 }
