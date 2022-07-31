@@ -59,7 +59,6 @@ const getUserByName = async (name: string) => {
 const createUser = async (username: string, lang: string) => {
     try {
         const user: User = await getUserByName(username);
-        console.log("testtttttttttt");
         if (user != undefined) {
             if (lang != user.lang) {
                 await updateUser(user.token, lang)
@@ -77,7 +76,7 @@ const createUser = async (username: string, lang: string) => {
 //update user info
 const updateUser = async (token: string, lang: string) => {
     const user = await pool.query('UPDATE users SET lang = $1 WHERE id = $2', [lang, token]);
-    console.log(user.rows);
+    
 }
 
 //delete user
@@ -86,7 +85,7 @@ const deleteUser = (token: string) => {
         if (error) {
             throw error
         } else {
-            console.log(results);
+            
             return (`User deleted with ID: ${token}`)
         }
     })

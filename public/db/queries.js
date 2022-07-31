@@ -87,7 +87,6 @@ const createUser = (username, lang) => __awaiter(void 0, void 0, void 0, functio
 //update user info
 const updateUser = (token, lang) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield pool.query('UPDATE users SET lang = $1 WHERE id = $2', [lang, token]);
-    console.log(user.rows);
 });
 //delete user
 const deleteUser = (token) => {
