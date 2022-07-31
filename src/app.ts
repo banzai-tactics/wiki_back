@@ -1,11 +1,10 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-var request: any = require("request");
+var request = require("request");
 var cors = require('cors');
 var cookieParser = require('cookie-parser');
 const db = require('./db/queries');
 import { getWikiParagraph } from './services/wiki';
-import { next } from 'cheerio/lib/api/traversing';
 const app = express();
 const port = 3000;
 
@@ -53,7 +52,6 @@ app.post('/user', async (req, res, next) => {
             httpOnly: true, // The cookie only accessible by the web server
         }
         const user = await db.createUser(username, lang);
-        console.log(user);
         res.cookie('X-Authorization', user.token, options)
         res.status(200).send(user);
     } catch (error) {
@@ -87,7 +85,6 @@ app.get('/introduction/:articleId', async (req, res, next) => {
         //  const lang: unknown = req.get('Accept-Language')?.substring(0, 2) // get from header
         if (typeof token === "string") {
             const wikiData = await getWikiParagraph(articleId, token);
-            console.log(wikiData);
             res.status(200).send(wikiData);
         } else {
             throw (Error('unvalid token'));

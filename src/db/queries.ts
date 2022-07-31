@@ -24,8 +24,6 @@ const getUsers = () => {
 //get one user by id
 const getUserById = async (token: string) => {
     try {
-
-
         if (!token) {//if no token is presented
             throw new Error('Token provided is not valid');
         } else {
@@ -35,12 +33,7 @@ const getUserById = async (token: string) => {
                 return new User(user.rows[0].username, user.rows[0].lang, user.rows[0].id)
             }
             else {
-                // if (token != user.rows[0].id) {//if wrong token is presented
-                //     throw new Error('token provided is not valid');
-                //     // return response.status(403).json({ error: 'wrong token!' });
-                // } else {//successful
-
-                // }
+                throw new Error("no such user");
             }
         }
     } catch (error) {
@@ -52,7 +45,6 @@ const getUserById = async (token: string) => {
 const getUserByName = async (name: string) => {
     const user = await pool.query('SELECT * FROM users WHERE username = $1', [name]);
     return new User(user.rows[0].username, user.rows[0].lang, user.rows[0].id);
-
 }
 
 //add new user or if exists "login"
@@ -82,7 +74,7 @@ const updateUser = async (token: string, lang: string) => {
 
 //delete user
 const deleteUser = (token: string) => {
-    pool.query('DELETE FROM users WHERE id = $1', [token], (error: any, results: any) => {
+    pool.query('DELETE FROM users WHERE id = $1', [token], (error: unknown, results: unknown) => {
         if (error) {
             throw error
         } else {
