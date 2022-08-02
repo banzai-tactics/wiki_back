@@ -1,6 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-var request: any = require("request");
+var request = require("request");
 var cors = require('cors');
 var cookieParser = require('cookie-parser');
 const db = require('./db/queries');
