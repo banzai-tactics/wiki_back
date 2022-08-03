@@ -23,9 +23,7 @@ function getWikiHtml(html: string) {
 	})
 	return text;
 }
-async function test() {
 
-}
 
 async function getWikiObject(articleId: string, lang: string): Promise<any> {
 	var url: string = `https://${lang}.wikipedia.org/wiki/${articleId}`;
@@ -39,14 +37,14 @@ async function getWikiObject(articleId: string, lang: string): Promise<any> {
 	return data;
 }
 
-
 export async function getWikiParagraph(articleId: string, token: string) {
 	try {
 		if (token != undefined) {
-			const user = await db.getUserById(token); //TODO: add User type
+			const user = await db.getUserByIdTypeORM(token); //TODO: add User type
 			const lang = user.lang;
 			if (isValidName(articleId)) {
 				const wikiArticle = await getWikiObject(articleId, lang);
+				await db.addSearchTypeORM(user,articleId);
 				return (wikiArticle);
 			} else {
 				var errs = encodeURIComponent('name_containes_illegal_chars');

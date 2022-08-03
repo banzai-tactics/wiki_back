@@ -12,8 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const User_1 = require("../services/User");
+const User_1 = require("./entity/User");
 const dotenv_1 = __importDefault(require("dotenv"));
+const data_source_1 = require("./data-source");
+const Search_1 = require("./entity/Search");
 dotenv_1.default.config();
 const Pool = require('pg').Pool;
 const pool = new Pool({
@@ -23,92 +25,89 @@ const pool = new Pool({
     password: process.env.PASSWORD,
     port: process.env.PORT,
 });
-//get all users
-const getUsers = () => {
-    pool.query('SELECT * FROM users ORDER BY id ASC', (error, results) => {
-        if (error) {
-            throw error;
-        }
-        else {
-            return results;
-        }
-    });
-};
-//get one user by id
-const getUserById = (token) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        if (!token) { //if no token is presented
-            throw new Error('Token provided is not valid');
-        }
-        else {
-            const user = yield pool.query('SELECT * FROM users WHERE id = $1', [token]);
-            if (user != undefined) { //TODO: think of better if
-                console.log(user.rows);
-                return new User_1.User(user.rows[0].username, user.rows[0].lang, user.rows[0].id);
-            }
-            else {
-                // if (token != user.rows[0].id) {//if wrong token is presented
-                //     throw new Error('token provided is not valid');
-                //     // return response.status(403).json({ error: 'wrong token!' });
-                // } else {//successful
-                // }
-            }
-        }
-    }
-    catch (error) {
-        throw error;
-    }
-});
-//get one user by name
-const getUserByName = (name) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield pool.query('SELECT * FROM users WHERE username = $1', [name]);
-    return new User_1.User(user.rows[0].username, user.rows[0].lang, user.rows[0].id);
-});
-//add new user or if exists "login"
-const createUser = (username, lang) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const user = yield getUserByName(username);
-        console.log("testtttttttttt");
-        if (user != undefined) {
-            if (lang != user.lang) {
-                yield updateUser(user.token, lang);
-            }
-            return new User_1.User(user.username, lang, user.token);
-        }
-        else {
-            const newUser = yield pool.query('INSERT INTO users (username, lang) VALUES ($1, $2) RETURNING *', [username, lang]);
-            return new User_1.User(newUser.rows[0].username, newUser.rows[0].lang, newUser.rows[0].id);
-        }
-    }
-    catch (error) {
-        throw error;
-    }
-});
-//update user info
-const updateUser = (token, lang) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield pool.query('UPDATE users SET lang = $1 WHERE id = $2', [lang, token]);
-    console.log(user.rows);
-});
-//delete user
-const deleteUser = (token) => {
-    pool.query('DELETE FROM users WHERE id = $1', [token], (error, results) => {
-        if (error) {
-            throw error;
-        }
-        else {
-            console.log(results);
-            return (`User deleted with ID: ${token}`);
-        }
-    });
-};
+// //get all users
+// const getUsers = async () => {
+//     try {
+//         const users = await pool.query('SELECT * FROM users ORDER BY id ASC');
+//         return users
+//     } catch (error) {
+//         throw error;
+//     }
+//     // pool.query('SELECT * FROM users ORDER BY id ASC', (error: unknown, results: unknown) => {
+//     //     if (error) {
+//     //         throw error;
+//     //     } else {
+//     //         return results;
+//     //     }
+//     // })
+// }
+// //get one user by id
+// const getUserById = async (token: string) => {
+//     try {
+//         if (!token) {//if no token is presented
+//             throw new Error('Token provided is not valid');
+//         } else {
+//             const user = await pool.query('SELECT * FROM users WHERE id = $1', [token]);
+//             if (user != undefined) {//TODO: think of better if
+//                 console.log(user.rows);
+//                 return new User(user.rows[0].username, user.rows[0].lang, user.rows[0].id)
+//             }
+//             else {
+//                 throw new Error("no such user");
+//             }
+//         }
+//     } catch (error) {
+//         throw error;
+//     }
+// }
+// //get one user by name
+// const getUserByName = async (name: string) => {
+//     try {
+//         const user = await pool.query('SELECT * FROM users WHERE username = $1', [name]);
+//         return new User(user.rows[0].username, user.rows[0].lang, user.rows[0].id);
+//     } catch (error) {
+//         throw error;
+//     }
+// }
+// //add new user or if exists "login"
+// const createUser = async (username: string, lang: string) => {
+//     try {
+//         const user: User = await getUserByName(username);
+//         if (user != undefined) {
+//             if (lang != user.lang) {
+//                 await updateUser(user.token, lang)
+//             }
+//             return new User(user.username, lang, user.token);
+//         } else {
+//             const newUser = await pool.query('INSERT INTO users (username, lang) VALUES ($1, $2) RETURNING *', [username, lang]);
+//             return new User(newUser.rows[0].username, newUser.rows[0].lang, newUser.rows[0].id)
+//         }
+//     } catch (error) {
+//         throw error
+//     }
+// }
+// //update user info
+// const updateUser = async (token: string, lang: string) => {
+//     const user = await pool.query('UPDATE users SET lang = $1 WHERE id = $2', [lang, token]);
+// }
+// //delete user
+// const deleteUser = (token: string) => {
+//     pool.query('DELETE FROM users WHERE id = $1', [token], (error: unknown, results: unknown) => {
+//         if (error) {
+//             throw error
+//         } else {
+//             return (`User deleted with ID: ${token}`)
+//         }
+//     })
+// }
 //export
-module.exports = {
-    getUsers,
-    getUserById,
-    createUser,
-    updateUser,
-    deleteUser,
-};
+// module.exports = {
+//     getUsers,
+//     getUserById,
+//     createUser,
+//     updateUser,
+//     deleteUser,
+// }
 // BL VS CONTROLLER - need to seprate the two. all error handle in next()
 //config file by enviorment variables. conifg.ts - > file.env (gen variables & secrets) not in commit.
 // https://www.npmjs.com/package/dotenv
@@ -116,3 +115,117 @@ module.exports = {
 //unknow is better then any => typeof === blah
 //use next(e)
 //add try catch in async
+/*TYPEORM */
+function getAllUsers() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userRepo = data_source_1.AppDataSource.getRepository(User_1.User);
+        //get all users
+        const allUsers = yield userRepo.find();
+        console.log("All users from the db: ", allUsers);
+        const users = yield data_source_1.AppDataSource
+            .getRepository(User_1.User)
+            .createQueryBuilder("user")
+            .leftJoinAndSelect("user.searches", "search")
+            .getMany();
+        console.log("@@@@@@@@@@@@@@@@@@@@@@@@@");
+        console.log(users);
+    });
+}
+function createUserTypeORM(username, lang) {
+    return __awaiter(this, void 0, void 0, function* () {
+        //check if user already exists
+        const userTmp = yield getUserByNameTypeORM(username);
+        if (userTmp != null) {
+            console.log(userTmp.searches);
+            return userTmp;
+        }
+        else {
+            const user = new User_1.User();
+            user.username = username;
+            user.lang = lang;
+            user.searches = [];
+            const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
+            const newUser = yield userRepository.save(user);
+            return newUser;
+        }
+    });
+}
+function getUserByNameTypeORM(username) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userRepo = data_source_1.AppDataSource.getRepository(User_1.User);
+        //get by name user
+        const byNameUser = yield userRepo.findOneBy({
+            username: username,
+        });
+        // console.log("First user from the db: ", byNameUser)
+        return byNameUser;
+    });
+}
+function getUserByIdTypeORM(token) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const user = yield data_source_1.AppDataSource
+            .getRepository(User_1.User)
+            .createQueryBuilder("user")
+            .leftJoinAndSelect("user.searches", "search")
+            .where("user.token = :token", { token: token })
+            .getOne();
+        console.log("!!!!!!!!!!!!!!!!");
+        console.log(user);
+        return user;
+        // const userRepo = AppDataSource.getRepository(User);
+        // //get by name user
+        // const byNameUser = await userRepo.findOneBy({
+        //     token: token,
+        // })
+        // return byNameUser;
+    });
+}
+//update user function
+function updateUserTypeORM(token, lang) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
+        const userToUpdate = yield userRepository.findOneBy({
+            token: token,
+        });
+        userToUpdate.lang = lang;
+        yield userRepository.save(userToUpdate);
+    });
+}
+//remove user function
+function removeUserTypeORM(token) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
+        const userToUpdate = yield userRepository.findOneBy({
+            token: token,
+        });
+        yield userRepository.remove(userToUpdate);
+    });
+}
+//add search
+function addSearchTypeORM(user, title) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const search = new Search_1.Search();
+        search.searchTitle = title;
+        search.searchTime = new Date().getDate();
+        user.addSearch(search);
+        const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
+        yield userRepository.save(user);
+        yield getAllUsers();
+    });
+}
+function getAllSearches() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const searchRepo = data_source_1.AppDataSource.getRepository(Search_1.Search);
+        //get all users
+        const allSearches = yield searchRepo.find();
+    });
+}
+module.exports = {
+    getAllUsers,
+    getUserByIdTypeORM,
+    createUserTypeORM,
+    updateUserTypeORM,
+    removeUserTypeORM,
+    addSearchTypeORM,
+    getAllSearches
+};
