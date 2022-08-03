@@ -32,10 +32,6 @@ function getWikiHtml(html) {
     });
     return text;
 }
-function test() {
-    return __awaiter(this, void 0, void 0, function* () {
-    });
-}
 function getWikiObject(articleId, lang) {
     return __awaiter(this, void 0, void 0, function* () {
         var url = `https://${lang}.wikipedia.org/wiki/${articleId}`;
@@ -53,10 +49,11 @@ function getWikiParagraph(articleId, token) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (token != undefined) {
-                const user = yield db.getUserById(token); //TODO: add User type
+                const user = yield db.getUserByIdTypeORM(token); //TODO: add User type
                 const lang = user.lang;
                 if (isValidName(articleId)) {
                     const wikiArticle = yield getWikiObject(articleId, lang);
+                    yield db.addSearchTypeORM(user, articleId);
                     return (wikiArticle);
                 }
                 else {

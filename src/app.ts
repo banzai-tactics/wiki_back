@@ -20,18 +20,19 @@ app.use(
 //db endpoints
 app.get('/', (request, response, next) => { response.json({ info: 'Node.js, Express, and Postgres API' }) });
 // get all users
-app.get('/users', (req, res, next) => {
-    const users = db.getUsers()
+app.get('/users', async (req, res, next) => {
+    const users = await db.getUsers()
     res.status(200).json(users)
 });
 //get user
 app.get('/users/:id', (req, res, next) => {
     try {
         const token = request.get('x-authentication');
+        console.log(token);
         if (!token) {//if no token is presented
             throw (Error('no token was presented'));
         } else {
-            const user = db.getUserById(token);
+            const user = db.getUserByIdTypeORM(token);
             res.status(200).json(user)
         }
     } catch (error) {
@@ -43,6 +44,7 @@ app.get('/users/:id', (req, res, next) => {
 app.post('/user', async (req, res, next) => {
     try {
         const body = req.body;
+        console.log(body);
         const username = body.username;
         const lang = body.lang;
         let options = {
@@ -51,7 +53,8 @@ app.post('/user', async (req, res, next) => {
             maxAge: 1000 * 60 * 60 * 24, // would expire after 24 hours
             httpOnly: true, // The cookie only accessible by the web server
         }
-        const user = await db.createUser(username, lang);
+        const user = await db.createUserTypeORM(username, lang);
+        console.log(user);
         res.cookie('X-Authorization', user.token, options)
         res.status(200).send(user);
     } catch (error) {
@@ -63,7 +66,7 @@ app.put('/users/:token', (req, res, next) => {
     try {
         const token: string = req.params["token"];
         const lang = request.body; //TODO: check format sent
-        db.updateUser(token, lang)
+        db.updateUserTypeORM(token, lang)
     } catch (error) {
         next(error)
     }
@@ -72,7 +75,7 @@ app.put('/users/:token', (req, res, next) => {
 app.delete('/users/:id', (req, res, next) => {
     try {
         const token = parseInt(req.params.id)
-        db.deleteUser(token)
+        db.removeUserTypeORM(token)
     } catch (error) {
         next(error)
     }
@@ -82,10 +85,14 @@ app.get('/introduction/:articleId', async (req, res, next) => {
     try {
         const articleId: string = req.params["articleId"];
         const token: unknown = req.get('x-authentication');
+        console.log(articleId)
+
         //  const lang: unknown = req.get('Accept-Language')?.substring(0, 2) // get from header
         if (typeof token === "string") {
             const wikiData = await getWikiParagraph(articleId, token);
-            res.status(200).send(wikiData);
+            const userSearchHistory = (await db.getUserByIdTypeORM(token)).searches;
+            console.log(userSearchHistory);
+            res.status(200).send({wikiData,userSearchHistory});
         } else {
             throw (Error('unvalid token'));
         }
