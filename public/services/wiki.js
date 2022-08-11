@@ -49,7 +49,9 @@ function getWikiParagraph(articleId, token) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (token != undefined) {
+                console.log(token);
                 const user = yield db.getUserByIdTypeORM(token); //TODO: add User type
+                console.log(user);
                 const lang = user.lang;
                 if (isValidName(articleId)) {
                     const wikiArticle = yield getWikiObject(articleId, lang);

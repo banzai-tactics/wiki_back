@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Search = void 0;
 const typeorm_1 = require("typeorm");
 const User_1 = require("./User");
-let Search = class Search {
+let Search = class Search extends typeorm_1.BaseEntity {
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)("uuid"),

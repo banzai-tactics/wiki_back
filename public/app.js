@@ -21,6 +21,8 @@ const db = require('./db/queries');
 const wiki_1 = require("./services/wiki");
 const app = (0, express_1.default)();
 const port = 3000;
+const data_source_1 = require("./db/data-source");
+(0, data_source_1.connection)();
 app.use(cors());
 app.use(cookieParser());
 app.use(body_parser_1.default.json());
@@ -31,7 +33,7 @@ app.use(body_parser_1.default.urlencoded({
 app.get('/', (request, response, next) => { response.json({ info: 'Node.js, Express, and Postgres API' }); });
 // get all users
 app.get('/users', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const users = yield db.getUsers();
+    const users = yield db.getAllUsersTypeORM();
     res.status(200).json(users);
 }));
 //get user

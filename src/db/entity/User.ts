@@ -1,10 +1,10 @@
 import {
-    Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn
+    Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, BaseEntity
 } from "typeorm"
 import { Search } from "./Search"
 
 @Entity()
-export class User {
+export class User extends BaseEntity {
     @Column()
     username: string;
 

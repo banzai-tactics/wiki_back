@@ -6,11 +6,12 @@ import {
     JoinColumn,
     Timestamp,
     ManyToOne,
+    BaseEntity
 } from "typeorm"
 import { User } from "./User"
 
 @Entity()
-export class Search {
+export class Search extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     id: number
 

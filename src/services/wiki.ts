@@ -40,7 +40,9 @@ async function getWikiObject(articleId: string, lang: string): Promise<any> {
 export async function getWikiParagraph(articleId: string, token: string) {
 	try {
 		if (token != undefined) {
+			console.log(token);
 			const user = await db.getUserByIdTypeORM(token); //TODO: add User type
+			console.log(user);
 			const lang = user.lang;
 			if (isValidName(articleId)) {
 				const wikiArticle = await getWikiObject(articleId, lang);

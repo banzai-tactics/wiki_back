@@ -7,8 +7,9 @@ const db = require('./db/queries');
 import { getWikiParagraph } from './services/wiki';
 const app = express();
 const port = 3000;
+import {connection} from './db/data-source'
 
-
+connection()
 app.use(cors());
 app.use(cookieParser());
 app.use(bodyParser.json());
@@ -21,7 +22,7 @@ app.use(
 app.get('/', (request, response, next) => { response.json({ info: 'Node.js, Express, and Postgres API' }) });
 // get all users
 app.get('/users', async (req, res, next) => {
-    const users = await db.getUsers()
+    const users = await db.getAllUsersTypeORM()
     res.status(200).json(users)
 });
 //get user
@@ -117,3 +118,6 @@ app.listen(port, () => {
 //TODO: unknow is better then any => typeof === blah
 //TODO: use next(e)
 //TODO: add try catch in async
+
+
+

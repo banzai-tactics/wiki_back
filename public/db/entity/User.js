@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = void 0;
 const typeorm_1 = require("typeorm");
 const Search_1 = require("./Search");
-let User = class User {
+let User = class User extends typeorm_1.BaseEntity {
     addSearch(search) {
         if (this.searches == null) {
             this.searches = new Array();
