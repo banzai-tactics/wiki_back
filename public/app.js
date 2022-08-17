@@ -33,8 +33,8 @@ app.use(body_parser_1.default.urlencoded({
 app.get('/', (request, response, next) => { response.json({ info: 'Node.js, Express, and Postgres API' }); });
 // get all users
 app.get('/users', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const users = yield db.getAllUsersTypeORM();
-    res.status(200).json(users);
+    //const users = await db.getAllUsersTypeORM()
+    res.status(200).json();
 }));
 //get user
 app.get('/users/:id', (req, res, next) => {
@@ -125,6 +125,7 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
     return console.log(`Express is listening at http://localhost:${port}`);
 });
+exports.default = app;
 // BL VS CONTROLLER - need to seprate the two. all error handle in next()
 //TODO: config file by enviorment variables. conifg.ts - > file.env (gen variables & secrets) not in commit.
 //TODO: https://www.npmjs.com/package/dotenv
