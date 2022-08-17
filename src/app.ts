@@ -7,8 +7,11 @@ const db = require('./db/queries');
 import { getWikiParagraph } from './services/wiki';
 const app = express();
 const port = 3000;
+import { connection } from './db/data-source'
 
-
+const conn = async () => {
+    await connection();
+}
 app.use(cors());
 app.use(cookieParser());
 app.use(bodyParser.json());
@@ -20,18 +23,18 @@ app.use(
 //db endpoints
 app.get('/', (request, response, next) => { response.json({ info: 'Node.js, Express, and Postgres API' }) });
 // get all users
-app.get('/users', (req, res, next) => {
-    const users = db.getUsers()
-    res.status(200).json(users)
+app.get('/users', async (req, res, next) => {
+    const users = await db.getAllUsersTypeORM()
+    res.status(200).json(users);
 });
 //get user
-app.get('/users/:id', (req, res, next) => {
+app.get('/users/:id', async (req, res, next) => {
     try {
         const token = request.get('x-authentication');
         if (!token) {//if no token is presented
-            throw (Error('no token was presented'));
+            res.status(401).json(Error('no token was presented'))
         } else {
-            const user = db.getUserById(token);
+            const user = await db.getUserByIdTypeORM(token);
             res.status(200).json(user)
         }
     } catch (error) {
@@ -51,7 +54,7 @@ app.post('/user', async (req, res, next) => {
             maxAge: 1000 * 60 * 60 * 24, // would expire after 24 hours
             httpOnly: true, // The cookie only accessible by the web server
         }
-        const user = await db.createUser(username, lang);
+        const user = await db.createUserTypeORM(username, lang);
         res.cookie('X-Authorization', user.token, options)
         res.status(200).send(user);
     } catch (error) {
@@ -59,20 +62,20 @@ app.post('/user', async (req, res, next) => {
     }
 })
 // update user lang
-app.put('/users/:token', (req, res, next) => {
+app.put('/users/:token', async (req, res, next) => {
     try {
         const token: string = req.params["token"];
         const lang = request.body; //TODO: check format sent
-        db.updateUser(token, lang)
+        await db.updateUserTypeORM(token, lang)
     } catch (error) {
         next(error)
     }
 });
 // delete user
-app.delete('/users/:id', (req, res, next) => {
+app.delete('/users/:id', async (req, res, next) => {
     try {
         const token = parseInt(req.params.id)
-        db.deleteUser(token)
+        await db.removeUserTypeORM(token)
     } catch (error) {
         next(error)
     }
@@ -82,10 +85,10 @@ app.get('/introduction/:articleId', async (req, res, next) => {
     try {
         const articleId: string = req.params["articleId"];
         const token: unknown = req.get('x-authentication');
-        //  const lang: unknown = req.get('Accept-Language')?.substring(0, 2) // get from header
         if (typeof token === "string") {
             const wikiData = await getWikiParagraph(articleId, token);
-            res.status(200).send(wikiData);
+            const userSearchHistory = (await db.getUserByIdTypeORM(token)).searches;
+            res.status(200).send({ wikiData, userSearchHistory });
         } else {
             throw (Error('unvalid token'));
         }
@@ -103,10 +106,5 @@ app.listen(port, () => {
     return console.log(`Express is listening at http://localhost:${port}`);
 });
 
-// BL VS CONTROLLER - need to seprate the two. all error handle in next()
-//TODO: config file by enviorment variables. conifg.ts - > file.env (gen variables & secrets) not in commit.
-//TODO: https://www.npmjs.com/package/dotenv
-//TODO: use const or let not var. immutable concept.
-//TODO: unknow is better then any => typeof === blah
-//TODO: use next(e)
-//TODO: add try catch in async
+
+export default app;

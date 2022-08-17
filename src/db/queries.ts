@@ -1,103 +1,110 @@
-import { User } from "../services/User";
-import dotenv from 'dotenv'
-dotenv.config();
+import { User } from './entity/User';
+import { Search } from './entity/Search';
+import { createQueryBuilder } from 'typeorm';
 
-const Pool = require('pg').Pool
-const pool = new Pool({
-    user: process.env.USER,
-    host: process.env.HOST,
-    database: process.env.DATABASE,
-    password: process.env.PASSWORD,
-    port: process.env.PORT,
-});
 
-//get all users
-const getUsers = () => {
-    pool.query('SELECT * FROM users ORDER BY id ASC', (error: unknown, results: unknown) => {
-        if (error) {
-            throw error;
-        } else {
-            return results;
-        }
-    })
+// /*TYPEORM */
+export async function getAllUsersTypeORM() {
+    const users = await createQueryBuilder("user")
+        .select('user')
+        .from(User, 'user')
+        .leftJoinAndSelect("user.searches", "search")
+        .getMany()
+    // const users = await AppDataSource
+    // .getRepository(User)
+    // .createQueryBuilder("user")
+    // .leftJoinAndSelect("user.searches", "search")
+    // .getMany()
+    return users;
+
 }
-//get one user by id
-const getUserById = async (token: string) => {
-    try {
-        if (!token) {//if no token is presented
-            throw new Error('Token provided is not valid');
-        } else {
-            const user = await pool.query('SELECT * FROM users WHERE id = $1', [token]);
-            if (user != undefined) {//TODO: think of better if
-                console.log(user.rows);
-                return new User(user.rows[0].username, user.rows[0].lang, user.rows[0].id)
-            }
-            else {
-                throw new Error("no such user");
-            }
-        }
-    } catch (error) {
-        throw error;
+
+export async function createUserTypeORM(username: string, lang: string) {
+    //check if user already exists
+    const userTmp = await getUserByNameTypeORM(username);
+    if (userTmp != null) {
+        console.log(userTmp.searches);
+        return userTmp;
+    } else {
+        const user = User.create({
+            username: username,
+            lang: lang,
+            searches: []
+        });
+        await user.save();
+        return user;
     }
 }
 
-//get one user by name
-const getUserByName = async (name: string) => {
-    const user = await pool.query('SELECT * FROM users WHERE username = $1', [name]);
-    return new User(user.rows[0].username, user.rows[0].lang, user.rows[0].id);
+export async function getUserByNameTypeORM(username: string) {
+
+    const byNameUser = await createQueryBuilder("user")
+        .select('user')
+        .from(User, 'user')
+        .where('user.username = :username', { username: username })
+        .leftJoinAndSelect("user.searches", "search")
+        .getOne()
+    // const userRepo = AppDataSource.getRepository(User);
+    // //get by name user
+    // const byNameUser = await userRepo.findOneBy({
+    //     username: username,
+    // })
+    // console.log("First user from the db: ", byNameUser)
+    return byNameUser;
 }
 
-//add new user or if exists "login"
-const createUser = async (username: string, lang: string) => {
-    try {
-        const user: User = await getUserByName(username);
-        console.log("testtttttttttt");
-        if (user != undefined) {
-            if (lang != user.lang) {
-                await updateUser(user.token, lang)
-            }
-            return new User(user.username, lang, user.token);
-        } else {
-            const newUser = await pool.query('INSERT INTO users (username, lang) VALUES ($1, $2) RETURNING *', [username, lang]);
-            return new User(newUser.rows[0].username, newUser.rows[0].lang, newUser.rows[0].id)
-        }
-    } catch (error) {
-        throw error
-    }
+export async function getUserByIdTypeORM(token: string) {
+    const user = await createQueryBuilder("user")
+        .select('user')
+        .from(User, 'user')
+        .where("user.token = :token", { token: token })
+        .leftJoinAndSelect("user.searches", "search")
+        .getOne();
+
+    // const user = await AppDataSource
+    // .getRepository(User)
+    // .createQueryBuilder("user")
+    // .leftJoinAndSelect("user.searches", "search")
+    // .where("user.token = :token", { token: token })
+    // .getOne()
+    return user;
 }
 
-//update user info
-const updateUser = async (token: string, lang: string) => {
-    const user = await pool.query('UPDATE users SET lang = $1 WHERE id = $2', [lang, token]);
-    console.log(user.rows);
+//update user function
+export async function updateUserTypeORM(token: string, lang: string) {
+    const user = User.create({
+        lang: lang,
+        searches: []
+    });
+    await user.save();
+    return user;
+
+    //     const userRepository = AppDataSource.getRepository(User)
+    // const userToUpdate = await userRepository.findOneBy({
+    //     token: token,
+    // })
+    // userToUpdate!.lang = lang;
+    // await userRepository.save(userToUpdate!);
 }
 
-//delete user
-const deleteUser = (token: string) => {
-    pool.query('DELETE FROM users WHERE id = $1', [token], (error: unknown, results: unknown) => {
-        if (error) {
-            throw error
-        } else {
-            console.log(results);
-            return (`User deleted with ID: ${token}`)
-        }
-    })
+//remove user function
+export async function removeUserTypeORM(token: string) {
+    const res = await User.delete(token);
+    return res
+    // const userRepository = AppDataSource.getRepository(User)
+    // const userToUpdate = await userRepository.findOneBy({
+    //     token: token,
+    // })
+    // await userRepository.remove(userToUpdate!);
 }
 
-//export
-module.exports = {
-    getUsers,
-    getUserById,
-    createUser,
-    updateUser,
-    deleteUser,
+//add search
+export async function addSearchTypeORM(user: User, title: string) {
+    const search = Search.create({
+        searchTitle: title,
+        searchTime: new Date().getDate()
+    });
+    user.addSearch(search);
+    user.save();
 }
 
-
-// BL VS CONTROLLER - need to seprate the two. all error handle in next()
-//config file by enviorment variables. conifg.ts - > file.env (gen variables & secrets) not in commit.
-// https://www.npmjs.com/package/dotenv
-// use const or let not var. immutable concept.
-//unknow is better then any => typeof === blah
-//use next(e)
-//add try catch in async

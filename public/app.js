@@ -21,6 +21,8 @@ const db = require('./db/queries');
 const wiki_1 = require("./services/wiki");
 const app = (0, express_1.default)();
 const port = 3000;
+const data_source_1 = require("./db/data-source");
+(0, data_source_1.connection)();
 app.use(cors());
 app.use(cookieParser());
 app.use(body_parser_1.default.json());
@@ -30,19 +32,20 @@ app.use(body_parser_1.default.urlencoded({
 //db endpoints
 app.get('/', (request, response, next) => { response.json({ info: 'Node.js, Express, and Postgres API' }); });
 // get all users
-app.get('/users', (req, res, next) => {
-    const users = db.getUsers();
-    res.status(200).json(users);
-});
+app.get('/users', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    //const users = await db.getAllUsersTypeORM()
+    res.status(200).json();
+}));
 //get user
 app.get('/users/:id', (req, res, next) => {
     try {
         const token = request.get('x-authentication');
+        console.log(token);
         if (!token) { //if no token is presented
             throw (Error('no token was presented'));
         }
         else {
-            const user = db.getUserById(token);
+            const user = db.getUserByIdTypeORM(token);
             res.status(200).json(user);
         }
     }
@@ -54,6 +57,7 @@ app.get('/users/:id', (req, res, next) => {
 app.post('/user', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const body = req.body;
+        console.log(body);
         const username = body.username;
         const lang = body.lang;
         let options = {
@@ -62,7 +66,7 @@ app.post('/user', (req, res, next) => __awaiter(void 0, void 0, void 0, function
             maxAge: 1000 * 60 * 60 * 24,
             httpOnly: true, // The cookie only accessible by the web server
         };
-        const user = yield db.createUser(username, lang);
+        const user = yield db.createUserTypeORM(username, lang);
         console.log(user);
         res.cookie('X-Authorization', user.token, options);
         res.status(200).send(user);
@@ -76,7 +80,7 @@ app.put('/users/:token', (req, res, next) => {
     try {
         const token = req.params["token"];
         const lang = request.body; //TODO: check format sent
-        db.updateUser(token, lang);
+        db.updateUserTypeORM(token, lang);
     }
     catch (error) {
         next(error);
@@ -86,7 +90,7 @@ app.put('/users/:token', (req, res, next) => {
 app.delete('/users/:id', (req, res, next) => {
     try {
         const token = parseInt(req.params.id);
-        db.deleteUser(token);
+        db.removeUserTypeORM(token);
     }
     catch (error) {
         next(error);
@@ -97,11 +101,13 @@ app.get('/introduction/:articleId', (req, res, next) => __awaiter(void 0, void 0
     try {
         const articleId = req.params["articleId"];
         const token = req.get('x-authentication');
+        console.log(articleId);
         //  const lang: unknown = req.get('Accept-Language')?.substring(0, 2) // get from header
         if (typeof token === "string") {
             const wikiData = yield (0, wiki_1.getWikiParagraph)(articleId, token);
-            console.log(wikiData);
-            res.status(200).send(wikiData);
+            const userSearchHistory = (yield db.getUserByIdTypeORM(token)).searches;
+            console.log(userSearchHistory);
+            res.status(200).send({ wikiData, userSearchHistory });
         }
         else {
             throw (Error('unvalid token'));
@@ -119,6 +125,7 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
     return console.log(`Express is listening at http://localhost:${port}`);
 });
+exports.default = app;
 // BL VS CONTROLLER - need to seprate the two. all error handle in next()
 //TODO: config file by enviorment variables. conifg.ts - > file.env (gen variables & secrets) not in commit.
 //TODO: https://www.npmjs.com/package/dotenv
