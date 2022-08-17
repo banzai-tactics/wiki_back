@@ -8,7 +8,6 @@ import {
 export class test1660152381512 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-
         await queryRunner.createTable(
             new Table({
                 name: "user",
@@ -30,7 +29,6 @@ export class test1660152381512 implements MigrationInterface {
             }),
             true,
         )
-
 
         await queryRunner.createTable(
             new Table({
@@ -70,9 +68,6 @@ export class test1660152381512 implements MigrationInterface {
                 onDelete: "CASCADE",
             }),
         )
-
-
-
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {

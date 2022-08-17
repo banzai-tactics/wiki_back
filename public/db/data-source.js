@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.connection = void 0;
+exports.closeConnection = exports.connection = void 0;
 require("reflect-metadata");
 // import {DataSource } from "typeorm";
 const typeorm_1 = require("typeorm");
@@ -63,3 +63,7 @@ const connection = () => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.connection = connection;
+const closeConnection = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, typeorm_1.getConnection)().close();
+});
+exports.closeConnection = closeConnection;
