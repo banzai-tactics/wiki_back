@@ -46,7 +46,6 @@ app.get('/users/:id', async (req, res, next) => {
 app.post('/user', async (req, res, next) => {
     try {
         const body = req.body;
-        console.log(body);
         const username = body.username;
         const lang = body.lang;
         let options = {
@@ -56,7 +55,6 @@ app.post('/user', async (req, res, next) => {
             httpOnly: true, // The cookie only accessible by the web server
         }
         const user = await db.createUserTypeORM(username, lang);
-        console.log(user);
         res.cookie('X-Authorization', user.token, options)
         res.status(200).send(user);
     } catch (error) {
@@ -87,9 +85,6 @@ app.get('/introduction/:articleId', async (req, res, next) => {
     try {
         const articleId: string = req.params["articleId"];
         const token: unknown = req.get('x-authentication');
-        console.log(articleId)
-
-        //  const lang: unknown = req.get('Accept-Language')?.substring(0, 2) // get from header
         if (typeof token === "string") {
             const wikiData = await getWikiParagraph(articleId, token);
             const userSearchHistory = (await db.getUserByIdTypeORM(token)).searches;
